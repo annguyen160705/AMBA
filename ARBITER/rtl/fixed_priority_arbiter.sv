@@ -7,16 +7,15 @@ module fixed_priority_arbiter(
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            GNT <= 4'h0;
+            GNT <= '0;
         end else begin
-            case (REQ)
+            casez (REQ)
                 
-                4'h8 : GNT <=  4'h8;
-                4'h4 : GNT <=  4'h4;
-                4'h2 : GNT <=  4'h2;
-                4'h1 : GNT <=  4'h1;
-                default : GNT <= 4'h0;
-                
+                4'b1??? : GNT <=  4'h8;
+                4'b01?? : GNT <=  4'h4;
+                4'b001? : GNT <=  4'h2;
+                4'b0001 : GNT <=  4'h1;
+                default: GNT <= '0;
             endcase
         end
     end
