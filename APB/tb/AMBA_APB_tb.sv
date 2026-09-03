@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module APB_Memory_tb;
+module AMBA_APB_tb;
 
     //============================================================
     // Parameters
