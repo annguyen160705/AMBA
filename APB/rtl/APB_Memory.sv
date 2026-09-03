@@ -1,4 +1,4 @@
-module APB_Memory #(
+module AMBA_APB #(
     parameter DATA_WIDTH = 32, MEMORY_DEPTH = 32,
     localparam ADDR_WIDTH = $clog2(MEMORY_DEPTH)
 ) (

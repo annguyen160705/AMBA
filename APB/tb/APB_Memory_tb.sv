@@ -27,7 +27,7 @@ module APB_Memory_tb;
     //============================================================
     // DUT
     //============================================================
-    APB_Memory #(
+    AMBA_APB #(
         .DATA_WIDTH(DATA_WIDTH),
         .MEMORY_DEPTH(MEMORY_DEPTH)
     ) dut (
