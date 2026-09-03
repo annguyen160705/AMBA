@@ -69,7 +69,6 @@ always_comb  begin
             end  
             if(!PENABLE || !PSEL) begin
                 NEXT_STATE = IDLE;
-                
             end
         end
 
