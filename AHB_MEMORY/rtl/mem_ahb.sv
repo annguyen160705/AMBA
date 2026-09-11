@@ -56,7 +56,7 @@ logic T_ENABLED = HSEL && HREADYin && HTRANS[1];
                 T_DATA [23:16] <= (T_BE[2]) ? HWDATA[23:16] : HRDATA[23:16];
                 T_DATA [31:24] <= (T_BE[3]) ? HWDATA[31:24] : HRDATA[31:24];
 
-                T_BE_D  <= T_BE;
+                T_BE_D  <= T_BE; 
                 T_WR_D  <= T_WR;
             end else begin
                 T_BE_D  <= 4'h0;
