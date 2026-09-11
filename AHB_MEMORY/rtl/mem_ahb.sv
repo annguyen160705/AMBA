@@ -28,7 +28,8 @@ logic [ADD_WIDTH-1:0] T_ADDR, T_ADDRw;
 logic [31:0] T_DATA;
 logic [3:0] T_BE, T_BE_D;
 logic T_WR, T_WR_D;
-logic T_ENABLED = HSEL && HREADYin && HTRANS[1];
+logic T_ENABLED;
+assign T_ENABLED = HSEL && HREADYin && HTRANS[1];
 
     always_ff @(posedge HCLK or negedge HRESETn) begin
         if (!HRESETn) begin
@@ -152,17 +153,5 @@ logic T_ENABLED = HSEL && HREADYin && HTRANS[1];
         endcase
         byte_enable = be;
     endfunction
-
-    //--------------------------------------------------------//
-    // synthesis translate_off
-    integer xxy;
-       initial begin
-         if (INIT) begin
-            for (xxy=0; xxy<NUM_WORDS; xxy=xxy+1) begin
-                mem[xxy] = xxy;
-            end
-         end
-        end
-    // synthesis translate_on
     
 endmodule
