@@ -74,7 +74,8 @@ module ahb_to_apb_s3 #(
     logic PSLVERR;
     `endif // AMBA_APB3
 
-    logic [2:0] _psel = {PSEL2,PSEL1,PSEL0};
+    logic [2:0] _psel; 
+    assign _psel = {PSEL2,PSEL1,PSEL0};
 
      ahb_to_apb_controller Uahb_to_apb_controller (
           .HRESETn(HRESETn)

@@ -15,9 +15,11 @@ module mem_apb #(
     
     input logic [31:0] PADDR, 
     
+    input logic PENABLE,
     input logic PWRITE,
     input logic [31:0] PWDATA,
     output logic [31:0] PRDATA
+
     `ifdef AMBA3
     ,output logic PREADY
     ,output logic PSLVERR
