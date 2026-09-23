@@ -5,7 +5,7 @@
 //    * frd_ : forward and fifo-read
 //    * bwr_ : backward and fifo-write
 
-module AHB2AHB_master#(
+module ahb2ahb_master_core#(
     parameter FIFO_AW = 5
 )(
     //--------------------------------------------------------//
