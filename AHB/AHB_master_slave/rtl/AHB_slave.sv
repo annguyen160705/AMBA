@@ -26,7 +26,7 @@ module AHB_slave #(
     //Coming from the Master.
     //--------------------------------------------------------//
     // Write Data
-    input logic [DATA_WIDTH - 1:0] HWDATA
+    input logic [DATA_WIDTH - 1:0] HWDATA,
     //HWDATA is the write data sent from the AHB Master to the AHB Slave.
     //--------------------------------------------------------//
     //Not using
@@ -37,7 +37,7 @@ module AHB_slave #(
     // input logic HMASTLOCK
     //--------------------------------------------------------//
     //User defined signal
-    input logic enable,
+    input logic enable
 );
 
     localparam MEM_ADDR_WIDTH = $clog2(slave_MEMORY_DEPTH);
@@ -96,6 +96,7 @@ module AHB_slave #(
         endcase
     end
 
+    integer i; 
     always_ff @(posedge HCLK or negedge HRESETn) begin
         if(!HRESETn) begin
                 for (i = 0; i < slave_MEMORY_DEPTH; i = i+ 1)

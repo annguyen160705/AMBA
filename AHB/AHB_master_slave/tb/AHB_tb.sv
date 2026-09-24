@@ -1,9 +1,10 @@
 `timescale 1ns/1ps
 
-module AHB_tb;
+module AHB_tb_improved;
 
     parameter DATA_WIDTH = 32;
     parameter ADDR_WIDTH = 32;
+    parameter MEM_DEPTH  = 32;
 
     //========================================================
     // Clock / Reset
@@ -12,18 +13,24 @@ module AHB_tb;
     logic HRESETn;
 
     //========================================================
-    // AHB signals
+    // AHB Bus Signals
     //========================================================
     logic [ADDR_WIDTH-1:0] HADDR;
-    logic HWRITE;
-
+    logic                  HWRITE;
+    logic [1:0]            HTRANS;
     logic [DATA_WIDTH-1:0] HWDATA;
     logic [DATA_WIDTH-1:0] HRDATA;
+    logic                  HREADY;
+    logic                  HRESP;
 
-    logic HREADY;
-    logic HREADYOUT;
-
-    logic HRESP;
+    //========================================================
+    // User Control Signals
+    //========================================================
+    logic                  master_enable;
+    logic                  master_write;
+    logic [ADDR_WIDTH-1:0] master_addr;
+    
+    logic                  slave_enable;
 
     //========================================================
     // Clock generation
@@ -34,91 +41,114 @@ module AHB_tb;
     end
 
     //========================================================
-    // Master
+    // Master Instance
     //========================================================
     AHB_master #(
         .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
-        
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .master_MEMORY_DEPTH(MEM_DEPTH)
     ) u_master (
         .HRESETn(HRESETn),
         .HCLK(HCLK),
-
         .HREADY(HREADY),
         .HRESP(HRESP),
-
         .HRDATA(HRDATA),
-
         .HADDR(HADDR),
         .HWRITE(HWRITE),
-
-        .HWDATA(HWDATA)
+        .HTRANS(HTRANS),
+        .HWDATA(HWDATA),
+        
+        // Control inputs
+        .write_top(master_write),
+        .enable(master_enable),
+        .addr_top(master_addr)
     );
 
     //========================================================
-    // Slave
+    // Slave Instance
     //========================================================
     AHB_slave #(
         .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .slave_MEMORY_DEPTH(MEM_DEPTH)
     ) u_slave (
         .HRESETn(HRESETn),
         .HCLK(HCLK),
-
-        .HREADYOUT(HREADYOUT),
+        .HREADYOUT(HREADY), // Connected directly to HREADY
         .HRESP(HRESP),
-
         .HRDATA(HRDATA),
-
         .HADDR(HADDR),
         .HWRITE(HWRITE),
-
-        .HWDATA(HWDATA)
+        .HTRANS(HTRANS),
+        .HWDATA(HWDATA),
+        
+        // Control inputs
+        .enable(slave_enable)
     );
-
-    //========================================================
-    // Connect HREADY
-    //========================================================
-    assign HREADY = HREADYOUT;
 
     //========================================================
     // Test sequence
     //========================================================
     initial begin
-
-        // Initialize
-        HRESETn = 1'b0;
+        // Initialize control signals
+        HRESETn       = 1'b0;
+        master_enable = 1'b0;
+        master_write  = 1'b0;
+        master_addr   = 32'h0;
+        slave_enable  = 1'b0;
 
         #20;
 
         // Release reset
         HRESETn = 1'b1;
+        #10;
+        
+        // Backdoor initialize master memory at index 1 (Address 4)
+        u_master.master_memory[1] = 32'hDEADBEEF;
 
         //====================================================
-        // WRITE
-        // Address = 4
-        // Data    = 0x12345678
+        // WRITE TRANSACTION
+        // Write data from master memory to slave at Address 4
         //====================================================
-        HADDR  = 32'd4;
-        HWRITE = 1'b1;
-        HWDATA = 32'h12345678;
+        @(posedge HCLK);
+        master_enable = 1'b1;
+        slave_enable  = 1'b1;
+        master_write  = 1'b1;
+        master_addr   = 32'd4; // Word-aligned address
 
-        #50;
+        // Wait for address phase to complete
+        @(posedge HCLK);
+        master_enable = 1'b0; // Deassert enable to prevent looping
+        
+        // Wait for data phase to complete
+        wait(HREADY == 1'b1);
+        @(posedge HCLK);
 
         //====================================================
-        // READ
-        // Address = 4
+        // READ TRANSACTION
+        // Read data back from slave at Address 4
         //====================================================
-        HADDR  = 32'd4;
-        HWRITE = 1'b0;
+        master_enable = 1'b1;
+        master_write  = 1'b0;
+        master_addr   = 32'd4;
 
-        #50;
+        // Wait for address phase
+        @(posedge HCLK);
+        master_enable = 1'b0;
+        
+        // Wait for data phase
+        wait(HREADY == 1'b1);
+        @(posedge HCLK);
+        
+        if (HRDATA == 32'hDEADBEEF)
+            $display("SUCCESS: Data read successfully.");
+        else
+            $display("ERROR: Expected 0xDEADBEEF, got 0x%08h", HRDATA);
 
         //====================================================
         // Finish
         //====================================================
-        $finish;
-
+        #50 $finish;
     end
 
 endmodule
