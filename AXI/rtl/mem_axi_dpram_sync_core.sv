@@ -6,9 +6,10 @@ module mem_axi_dpram_sync_core #(
     , input logic [WIDTH_AD-1:0]    WADDR
     , input logic [7:0]             WDATA
     , input logic                   WEN
+
     , input logic [WIDTH_AD-1:0]    RADDR
-    , input logic                   REN
     , output logic [7:0]            RDATA
+    , input logic                   REN
 );
 
     localparam DEPTH    = (1<<WIDTH_AD);
