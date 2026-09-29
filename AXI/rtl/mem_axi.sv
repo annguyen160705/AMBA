@@ -101,6 +101,7 @@ module mem_axi #(
     , output logic [AXI_WIDTH_DA-1:0]   RDATA
     , output logic [1:0]                RRESP
     , output logic                      RVALID
+    , output logic                      RLAST
     , input logic                       RREADY
 
     //--------------------------------------------------------//
@@ -124,9 +125,9 @@ module mem_axi #(
     logic   [ADDR_LENGTH-1:0]   Traddr;
     logic   [AXI_WIDTH_DA-1:0]  Trdata;
     logic   [AXI_WIDTH_DS-1:0]  Trstrb;
-    logic                       Tren;
 
-    logic                       TrenX;
+    logic                       Tren;   // driven by stateR
+    logic                       TrenX;  // actual Tren
 
     //--------------------------------------------------------//
     // write case
@@ -208,7 +209,7 @@ module mem_axi #(
                         `endif // AMBA_AXI_PROT
                         AWREADY     <= 1'b0;
                         WREADY      <= 1'b1;
-                        BRESP       <= 2'b00
+                        BRESP       <= 2'b00;
                         addrW       <= AWADDR[ADDR_LENGTH-1:0];
                         beatW       <= 'h0;
                         stateW      <= STW_WRITE0;
@@ -412,7 +413,7 @@ module mem_axi #(
                     Tren    <= 1'b1;
                     Traddr  <= addrR;
                     Trstrb  <= get_strb(addrR,ARSIZE_reg);
-                    addrR   <= get_next_addr_rd(addR,ARSIZE_reg,ARBURST_reg,ARLEN_reg);
+                    addrR   <= get_next_addr_rd(addrR,ARSIZE_reg,ARBURST_reg,ARLEN_reg);
                     beatR   <= beatR + 1;
                     stateR  <= STR_READ31;
                 end 
@@ -430,14 +431,14 @@ module mem_axi #(
                             Tren    <= 1'b1;
                             Traddr  <= addrR;
                             Trstrb  <= get_strb(addrR,ARSIZE_reg);
-                            addr_R  <= get_next_addr_rd(addrR,ARSIZE_reg<ARBURST_reg,ARLEN_reg);
+                            addrR  <= get_next_addr_rd(addrR,ARSIZE_reg<ARBURST_reg,ARLEN_reg);
                         end
                         beatR   <= beatR + 1;
-                    end
-                end else begin
+                    end else begin
                     Tren    <= 1'b1;
                     dataR   <= Trdata;
                     stateR  <= STR_READ32;
+                end 
                 end   
                 STR_READ32: begin
                     if(RREADY == 1'b1) begin
@@ -469,7 +470,7 @@ module mem_axi #(
                     end else begin
                         Tren    <= 1'b0;
                         dataR   <= Trdata;
-                        stateR  ,= STR_READ34;
+                        stateR  <= STR_READ34;
                     end
                 end    
                 STR_READ34: begin
@@ -494,6 +495,25 @@ module mem_axi #(
             endcase
         end
     end
+
+     
+
+assign TrenX = ((stateR == STR_READ31) || (stateR == STR_READ32)) ? RREADY : Tren;
+
+mem_axi_dpram_sync #(.WIDTH_AD  (ADDR_LENGTH)
+                    ,.WIDTH_DA  (AXI_WIDTH_DA))
+Udpram(
+     .RESETn    (ARESETn)
+    ,.CLK       (ACLK)
+    ,.WADDR     (Twaddr)
+    ,.WDATA     (Twdata)
+    ,.WSTRB     (Twstrb)
+    ,.WEN       (Twen)
+    ,.RADDR     (Traddr)
+    ,.RDATA     (Trdata)
+    ,.RSTRB     (Trstrb)
+    ,.REN       (TrenX)
+);
 
 
 
