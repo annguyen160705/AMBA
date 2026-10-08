@@ -198,6 +198,8 @@ module ahb_lite_tb;
         $display("\nReading from Unmapped Address (Testing Default Slave)...");
         ahb_read(32'h3000_0000, read_data);
         $display("HRESP from Default Slave: 2'b%02b (Expected: 2'b01 ERROR)", M_HRESP);
+
+        
         
         $display("--- Simulation Complete ---\n");
         $finish;

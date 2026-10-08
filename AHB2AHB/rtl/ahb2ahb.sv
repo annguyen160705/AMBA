@@ -13,6 +13,7 @@ module ahb2ahb(
     , output logic [31:0]   sHRDATA
     , output logic [1:0]    sHRESP
     , input logic           sHREADYin
+    , output logic          sHREADYout
 
     //--------------------------------------------------------//
     // Master signals
