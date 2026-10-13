@@ -43,7 +43,7 @@ assign T_ENABLED = HSEL && HREADYin && HTRANS[1];
             T_WR_D    <= 1'b0;
         end else begin
             if(T_ENABLED) begin
-                T_ADDR <= HADDR[ADD_WIDTH-1:0];
+                T_ADDR  <= HADDR[ADD_WIDTH-1:0];
                 T_BE    <= byte_enable(HADDR[1:0], HSIZE);
                 T_WR    <= HWRITE;
                 HRDATA  <= mem[HADDR[ADD_WIDTH-1:2]];
@@ -52,10 +52,10 @@ assign T_ENABLED = HSEL && HREADYin && HTRANS[1];
                 T_WR    <= 1'b0;
             end
             if  (T_WR) begin
-                T_DATA [7:0] <= (T_BE[0]) ? HWDATA[7:0] : HRDATA[7:0];
-                T_DATA [15:8] <= (T_BE[1]) ? HWDATA[15:8] : HRDATA[15:8];
-                T_DATA [23:16] <= (T_BE[2]) ? HWDATA[23:16] : HRDATA[23:16];
-                T_DATA [31:24] <= (T_BE[3]) ? HWDATA[31:24] : HRDATA[31:24];
+                T_DATA [7:0]    <= (T_BE[0]) ? HWDATA[7:0] : HRDATA[7:0];
+                T_DATA [15:8]   <= (T_BE[1]) ? HWDATA[15:8] : HRDATA[15:8];
+                T_DATA [23:16]  <= (T_BE[2]) ? HWDATA[23:16] : HRDATA[23:16];
+                T_DATA [31:24]  <= (T_BE[3]) ? HWDATA[31:24] : HRDATA[31:24];
 
                 T_BE_D  <= T_BE; 
                 T_WR_D  <= T_WR;
