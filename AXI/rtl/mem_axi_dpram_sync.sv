@@ -1,8 +1,8 @@
 module mem_axi_dpram_sync #(
       parameter WIDTH_AD = 10 // size of memory in byte
-    , parameter WIDTH_DA = 32 // width of a line in bytes
+    , parameter WIDTH_DA = 32 // width of a line in bits
     , parameter WIDTH_DS = (WIDTH_DA/8) // width of a line in bytes
-    , parameter WIDTH_DSB = $clog2(WIDTH_DS)
+    , parameter WIDTH_DSB = $clog2(WIDTH_DS) 
 ) (
       input logic                 RESETn
     , input logic                 CLK
@@ -42,4 +42,8 @@ module mem_axi_dpram_sync #(
       );
     end
   endgenerate  
+// core 0 → WDATA[7:0]
+// core 1 → WDATA[15:8]
+// core 2 → WDATA[23:16]
+// core 3 → WDATA[31:24]
 endmodule

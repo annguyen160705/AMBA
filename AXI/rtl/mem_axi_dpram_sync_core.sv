@@ -3,6 +3,7 @@ module mem_axi_dpram_sync_core #(
 ) (
     input logic RESETn
     , input logic CLK
+
     , input logic [WIDTH_AD-1:0]    WADDR
     , input logic [7:0]             WDATA
     , input logic                   WEN

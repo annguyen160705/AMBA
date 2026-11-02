@@ -14,17 +14,17 @@ module bfm_apb_s3 #(
     , output logic [31:0]   PADDR
     , output logic          PENABLE
     , output logic          PWRITE
-    , output logic [P_DWIDTH-1:0] PWDATA
-    , input logic [P_DWIDTH-1:0] PRDATA0
-    , input logic [P_DWIDTH-1:0] PRDATA1
-    , input logic [P_DWIDTH-1:0] PRDATA2
+    , output logic  [P_DWIDTH-1:0] PWDATA
+    , input logic   [P_DWIDTH-1:0] PRDATA0
+    , input logic   [P_DWIDTH-1:0] PRDATA1
+    , input logic   [P_DWIDTH-1:0] PRDATA2
     `ifdef AMBA3
-    , input logic [P_NUM-1:0] PREADY
-    , input logic [P_NUM-1:0] PSLVERR
+    , input logic   [P_NUM-1:0] PREADY
+    , input logic   [P_NUM-1:0] PSLVERR
     `endif // AMBA3
     `ifdef AMBA4
-    , output logic [2:0] PPROT
-    , output logic [P_STRB-1:0] PSTRB
+    , output logic  [2:0] PPROT
+    , output logic  [P_STRB-1:0] PSTRB
     `endif // AMBA4
 );
 
@@ -92,7 +92,7 @@ module bfm_apb_s3 #(
                 apb_read(a, dataR, size);
                 if(dataR !== reposit[b]) begin
                     err = err + 1;
-                    $$display($time,"%m RAAWA error at A:0x%08x D:0x%x, but 0x%x expected",
+                    $display($time,"%m RAAWA error at A:0x%08x D:0x%x, but 0x%x expected",
                             a, dataR, reposit[b]);
                 end
             end
@@ -102,5 +102,5 @@ module bfm_apb_s3 #(
         
     endtask
 
-    `include "bfm_apb_tasks.sv"
+    `include "bfm_apb_tasks.svh"
 endmodule

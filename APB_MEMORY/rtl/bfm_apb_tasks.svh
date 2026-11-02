@@ -35,23 +35,23 @@ task apb_read(
     input logic [2:0] size
 );
 
-@(posedge PCLK);
-PADDR   <= #1 addr;
-PWRITE  <= #1 1'b0;
-PSEL    <= #1 decoder(addr);
-PSTRB   <= #1 4'hF;
-@(posedge PCLK);
-PENABLE <= #1 1'b1;
-@(posedge PCLK);
-while (get_pready(addr)==1'b0) @(posedge PCLK);
-`ifndef LOW_POWER
-PADDR   <= #1 32'h0;
+    @(posedge PCLK);
+    PADDR   <= #1 addr;
+    PWRITE  <= #1 1'b0;
+    PSEL    <= #1 decoder(addr);
+    PSTRB   <= #1 4'hF;
+    @(posedge PCLK);
+    PENABLE <= #1 1'b1;
+    @(posedge PCLK);
+    while (get_pready(addr)==1'b0) @(posedge PCLK);
+    `ifndef LOW_POWER
+    PADDR   <= #1 32'h0;
 
-`endif // LOW_POWER
-PSEL    <= #1 {P_NUM{1'b0}};
-PENABLE <= #1 1'b0;
-if(get_pslverr(addr) == 1'b1) $display($time,"%m PSLVERR");
-data    = get_prdata(addr);
+    `endif // LOW_POWER
+    PSEL    <= #1 {P_NUM{1'b0}};
+    PENABLE <= #1 1'b0;
+    if(get_pslverr(addr) == 1'b1) $display($time,"%m PSLVERR");
+    data    = get_prdata(addr);
     
 endtask
 
@@ -118,6 +118,30 @@ function automatic logic [3:0] decoder(
                 endcase
 
             endcase
+        end
+        
+    endfunction
+
+    function automatic logic get_pready(
+        input logic [31:0] addr
+    );
+
+        begin
+            if(P_NUM >= 1) begin
+                if( (addr[31:16] >= P_ADDR_START0) &&
+                    (addr[31:16] <= P_ADDR_START0 + P_ADDR_SIZE0 - 1))
+                    get_pready = PREADY[0];
+            end
+            if(P_NUM >= 2) begin
+                if( (addr[31:16] >= P_ADDR_START1) &&
+                    (addr[31:16] <= P_ADDR_START1 + P_ADDR_SIZE1 - 1))
+                    get_pready = PREADY[1];
+            end
+            if(P_NUM >= 3) begin
+                if( (addr[31:16] >= P_ADDR_START2) &&
+                    (addr[31:16] <= P_ADDR_START2 + P_ADDR_SIZE2 - 1))
+                    get_pready = PREADY[2];
+            end
         end
         
     endfunction
