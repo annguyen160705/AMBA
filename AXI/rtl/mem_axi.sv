@@ -431,7 +431,7 @@ module mem_axi #(
                             Tren    <= 1'b1;
                             Traddr  <= addrR;
                             Trstrb  <= get_strb(addrR,ARSIZE_reg);
-                            addrR  <= get_next_addr_rd(addrR,ARSIZE_reg<ARBURST_reg,ARLEN_reg);
+                            addrR  <= get_next_addr_rd(addrR,ARSIZE_reg,ARBURST_reg,ARLEN_reg);
                         end
                         beatR   <= beatR + 1;
                     end else begin
@@ -517,7 +517,7 @@ Udpram(
 
 function automatic logic [AXI_WIDTH_DS - 1:0] get_strb(
     input logic [ADDR_LENGTH-1:0] addr,
-    input logic [2:0] size,
+    input logic [2:0] size
 );
 
     logic [AXI_WIDTH_DS-1:0] offset;
@@ -544,11 +544,11 @@ endfunction
 function automatic logic [ADDR_LENGTH - 1:0] get_next_addr_wr(
     input logic [ADDR_LENGTH-1:0]   addr,
     input logic [2:0]               size,
-    input logic [1:0]               burst,
+    input logic [1:0]               burst
     `ifdef AMBA_AXI4
-    input logic [7:0]               len;
+    ,input logic [7:0]               len
     `else
-    input logic [3:0]               len;
+    ,input logic [3:0]               len
     `endif // AMBA_AXI4
     
 );
@@ -572,8 +572,6 @@ begin
         `ifdef BURST_TYPE_WRAPP_ENABLED
             mask = get_wrap_mask(size,len);
             get_next_addr_wr = (addr&~mask) | (((addr&mask)+(1<<size))&mask);
-        `else
-        $display($time,"%m ERROR BURST WRAP not supported");
         `endif // BURST_TYPE_WRAPP_ENABLED
         end
         2'b11: begin
@@ -584,7 +582,52 @@ end
 
 endfunction
 
-function automatic logic [ADDR_LENGTH-1:0] get_wrap_mask(
+
+function automatic logic [ADDR_LENGTH-1:0] get_next_addr_rd(
+    input logic [ADDR_LENGTH-1:0] addr,
+    input logic [2:0]               size,
+    input logic [1:0]               burst
+    `ifdef AMBA_AXI4
+        ,input logic [7:0] len
+    `else
+        ,input logic [3:0] len
+    `endif // AMBA_AXI4
+    
+);
+
+    logic [ADDR_LENGTH - AXI_WIDTH_DSB-1:0] naddr;
+    logic [ADDR_LENGTH-1:0] mask;
+
+    begin
+        case (burst)
+            2'b00: get_next_addr_rd = addr;
+            2'b01: begin
+                if((1<<size)<AXI_WIDTH_DS) begin
+                    get_next_addr_rd = addr + (1<<size);
+                end else begin
+                    naddr = addr[ADDR_LENGTH - 1: AXI_WIDTH_DSB];
+                    naddr = naddr + 1;
+                    get_next_addr_rd = { naddr,{AXI_WIDTH_DSB{1'b0}}};
+                end
+            end
+            2'b10: begin
+                `ifdef BURST_TYPE_WRAPP_ENABLED
+                    mask = get_wrap_mask(size,len0;
+                    get_next_addr_rd) = (addr&~mask) | (((addr&mask)+(1<<size))&mask);
+                `endif // BURST_TYPE_WRAPP_ENABLED
+            end
+            2'b11: begin
+                get_next_addr_rd = addr;
+            end
+        endcase
+    end
+    
+endfunction
+
+
+
+`ifdef BURST_TYPE_WRAPP_ENABLED
+    function automatic logic [ADDR_LENGTH-1:0] get_wrap_mask(
     input logic [2:0]   size,
     `ifdef AMBA_AXI4
         ,input logic [7:0] len
@@ -607,6 +650,8 @@ function automatic logic [ADDR_LENGTH-1:0] get_wrap_mask(
     end
     
 endfunction
+`endif // BURST_TYPE_WRAPP_ENABLED
+
 
 
 
