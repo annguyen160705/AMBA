@@ -41,7 +41,7 @@ module mem_axi_dpram_sync_core #(
                     RDATA   <= mem[RADDR];
                 end
             end else begin
-                RDATA   <= 'hX;
+                RDATA   <= 'x;
             end
         end
     end

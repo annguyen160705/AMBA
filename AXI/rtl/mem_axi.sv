@@ -1,3 +1,6 @@
+`include "rtl/mem_axi_dpram_sync.sv"
+`include "rtl/mem_axi_dpram_sync_core.sv"
+
 module mem_axi #(
       parameter AXI_WIDTH_CID   = 4
     , parameter AXI_WIDTH_ID    = 4
@@ -491,7 +494,13 @@ module mem_axi #(
                         ARREADY <= 1'b1;
                         stateR  <= STR_IDLE;
                     end
-                end                  
+                end        
+                default: begin
+                    stateR  <= STR_IDLE;
+                    ARREADY <= 1'b1;
+                    RVALID  <= 1'b0;
+                    RLAST   <= 1'b0;
+                end          
             endcase
         end
     end
@@ -526,14 +535,14 @@ function automatic logic [AXI_WIDTH_DS - 1:0] get_strb(
         offset = addr[AXI_WIDTH_DSB - 1:0];
         case (size)
 
-        3'b000: get_strb = {    1{1'b1}} << offset;
-        3'b001: get_strb = {    2{1'b1}} << offset;
-        3'b010: get_strb = {    4{1'b1}} << offset;
-        3'b011: get_strb = {    8{1'b1}} << offset;
-        3'b100: get_strb = {    16{1'b1}} << offset;
-        3'b101: get_strb = {    32{1'b1}} << offset;
-        3'b110: get_strb = {    64{1'b1}} << offset;
-        3'b111: get_strb = {    128{1'b1}} << offset;
+            3'b000: get_strb = {1{1'b1}}   << offset; // 1 byte
+            3'b001: get_strb = {2{1'b1}}   << offset; // 2 byte
+            3'b010: get_strb = {4{1'b1}}   << offset; // 4 byte
+            3'b011: get_strb = {8{1'b1}}   << offset;
+            3'b100: get_strb = {16{1'b1}}  << offset;
+            3'b101: get_strb = {32{1'b1}}  << offset;
+            3'b110: get_strb = {64{1'b1}}  << offset;
+            3'b111: get_strb = {128{1'b1}} << offset;
             
         endcase
 
@@ -561,7 +570,7 @@ begin
         2'b01: begin
             if((1<<size) < AXI_WIDTH_DS) begin
                 get_next_addr_wr = addr + (1<<size);
-            end else begin
+            end else begin // size >= 010 4 byte
                 naddr   = addr[ADDR_LENGTH - 1: AXI_WIDTH_DSB];
                 naddr   = naddr + 1;
                 get_next_addr_wr = {naddr,{AXI_WIDTH_DSB{1'b0}}};
@@ -612,8 +621,8 @@ function automatic logic [ADDR_LENGTH-1:0] get_next_addr_rd(
             end
             2'b10: begin
                 `ifdef BURST_TYPE_WRAPP_ENABLED
-                    mask = get_wrap_mask(size,len0;
-                    get_next_addr_rd) = (addr&~mask) | (((addr&mask)+(1<<size))&mask);
+                    mask = get_wrap_mask(size,len);
+                    get_next_addr_rd = (addr&~mask) | (((addr&mask)+(1<<size))&mask);
                 `endif // BURST_TYPE_WRAPP_ENABLED
             end
             2'b11: begin
@@ -652,9 +661,5 @@ endfunction
 endfunction
 `endif // BURST_TYPE_WRAPP_ENABLED
 
-
-
-
-
-
 endmodule
+
