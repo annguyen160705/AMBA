@@ -97,77 +97,386 @@ module tb_mem_axi;
     // Clock
     always #5 ACLK = ~ACLK;
 
+    //============================================================
+    // Send Write Address
+    //============================================================
+    task send_aw(
+        input logic [7:0]  id,
+        input logic [31:0] addr,
+        input logic [3:0]  len,
+        input logic [2:0]  size,
+        input logic [1:0]  burst
+    );
+    begin
+
+        @(negedge ACLK);
+
+        AWID    = id;
+        AWADDR  = addr;
+        AWLEN   = len;
+        AWSIZE  = size;
+        AWBURST = burst;
+        AWLOCK  = 2'b00;
+        AWVALID = 1'b1;
+
+        // Wait for AWREADY
+        wait(AWREADY == 1'b1);
+
+        // AW handshake
+        @(posedge ACLK);
+
+        @(negedge ACLK);
+        AWVALID = 1'b0;
+
+        $display("AW : ID=%h ADDR=%h LEN=%d SIZE=%b BURST=%b",
+                id, addr, len, size, burst);
+
+    end
+    endtask
+
+
+    //============================================================
+    // Send Write Data
+    //============================================================
+    task send_w(
+        input logic [7:0]  id,
+        input logic [31:0] data,
+        input logic        last
+    );
+    begin
+
+        @(negedge ACLK);
+
+        WID    = id;
+        WDATA  = data;
+        WSTRB  = 4'b1111;
+        WLAST  = last;
+        WVALID = 1'b1;
+
+        // Wait for WREADY
+        wait(WREADY == 1'b1);
+
+        // W handshake
+        @(posedge ACLK);
+
+        @(negedge ACLK);
+
+        WVALID = 1'b0;
+        WLAST  = 1'b0;
+
+        $display("W  : ADDR=%h DATA=%h LAST=%b beatW=%d",
+                dut.Twaddr, dut.Twdata, last, dut.beatW);
+
+    end
+    endtask
+
+
+    //============================================================
+    // Receive Write Response
+    //============================================================
+    task receive_b;
+    begin
+
+        wait(BVALID == 1'b1);
+
+        @(negedge ACLK);
+        BREADY = 1'b1;
+
+        $display("B  : BID=%h BRESP=%b", BID, BRESP);
+
+        @(posedge ACLK);
+
+        @(negedge ACLK);
+        BREADY = 1'b0;
+
+    end
+    endtask
+
+    //============================================================
+    // Send Read Address
+    //============================================================
+    task send_ar(
+        input logic [7:0]  id,
+        input logic [31:0] addr,
+        input logic [3:0]  len,
+        input logic [2:0]  size,
+        input logic [1:0]  burst
+    );
+    begin
+
+        @(negedge ACLK);
+
+        ARID    = id;
+        ARADDR  = addr;
+        ARLEN   = len;
+        ARSIZE  = size;
+        ARBURST = burst;
+        ARLOCK  = 2'b00;
+        ARVALID = 1'b1;
+
+        // Wait until DUT is ready
+        wait(ARREADY == 1'b1);
+
+        // AR handshake
+        @(posedge ACLK);
+
+        @(negedge ACLK);
+        ARVALID = 1'b0;
+
+        $display("AR : ID=%h ADDR=%h LEN=%d SIZE=%b BURST=%b",
+                id, addr, len, size, burst);
+
+    end
+    endtask
+
+
+    //============================================================
+    // Receive Read Data
+    //============================================================
+    task receive_r(
+        input integer number_of_beats
+    );
+
+        integer i;
+
+    begin
+
+        i = 0;
+
+        @(negedge ACLK);
+        RREADY = 1'b1;
+
+        while(i < number_of_beats) begin
+
+            @(negedge ACLK);
+
+            if(RVALID && RREADY) begin
+
+                $display(
+                    "R  : RID=%h DATA=%h RESP=%b LAST=%b",
+                    RID,
+                    RDATA,
+                    RRESP,
+                    RLAST
+                );
+
+                i = i + 1;
+
+            end
+
+        end
+
+        // Allow the final R handshake
+        @(posedge ACLK);
+
+        @(negedge ACLK);
+        RREADY = 1'b0;
+
+    end
+    endtask
+
 
     initial begin
 
-        ACLK    = 0;
-        ARESETn = 0;
+    //--------------------------------------------------------
+    // Initial values
+    //--------------------------------------------------------
+    ACLK    = 0;
+    ARESETn = 0;
 
-        AWID    = 0;
-        AWADDR  = 0;
-        AWLEN   = 0;
-        AWLOCK  = 0;
-        AWSIZE  = 0;
-        AWBURST = 0;
-        AWVALID = 0;
+    AWID    = 0;
+    AWADDR  = 0;
+    AWLEN   = 0;
+    AWLOCK  = 0;
+    AWSIZE  = 0;
+    AWBURST = 0;
+    AWVALID = 0;
 
-        WID     = 0;
-        WDATA   = 0;
-        WSTRB   = 0;
-        WLAST   = 0;
-        WVALID  = 0;
-        BREADY  = 0;
+    WID     = 0;
+    WDATA   = 0;
+    WSTRB   = 0;
+    WLAST   = 0;
+    WVALID  = 0;
 
-        ARID    = 0;
-        ARADDR  = 0;
-        ARLEN   = 0;
-        ARLOCK  = 0;
-        ARSIZE  = 0;
-        ARBURST = 0;
-        ARVALID = 0;
-        RREADY  = 0;
+    BREADY  = 0;
 
-        CSYSREQ = 0;
+    ARID    = 0;
+    ARADDR  = 0;
+    ARLEN   = 0;
+    ARLOCK  = 0;
+    ARSIZE  = 0;
+    ARBURST = 0;
+    ARVALID = 0;
+    RREADY  = 0;
 
-
-        // Release reset
-        #20;
-        ARESETn = 1;
-
-
-        // Wait until STW_IDLE makes AWREADY = 1
-        #10;
+    CSYSREQ = 0;
 
 
-        // Test AW handshake
-        AWID    = 8'h01;
-        AWADDR  = 32'h0000_0010;
-        AWLEN   = 4'h0;
-        AWSIZE  = 3'b010;
-        AWBURST = 2'b01;
-        AWLOCK  = 2'b00;
-        AWVALID = 1;
+    //--------------------------------------------------------
+    // RESET
+    //--------------------------------------------------------
+    #20;
+    ARESETn = 1;
+
+    #20; //40
 
 
-        // Handshake happens here
-        #10;
+    //========================================================
+    // TEST 1: SINGLE DATA WRITE
+    //========================================================
+    $display("");
+    $display("====================================");
+    $display(" TEST 1: SINGLE WRITE");
+    $display("====================================");
 
-        AWVALID = 0;
+    // One transfer:
+    // AWLEN = 0 -> 1 beat
+    //
+    // Address = 0x10
+    // Size    = 010 -> 4 bytes
+    // Burst   = 01  -> INCR
+
+    send_aw(
+        8'h01,
+        32'h0000_0010,
+        4'd0,
+        3'b010,
+        2'b01
+    );
+
+    // Only one data beat -> WLAST = 1
+    send_w(
+        8'h01,
+        32'h1111_2222,
+        1'b1
+    );
+
+    receive_b(); 
 
 
-        // Show result
-        $display("AWREADY    = %b", AWREADY);
-        $display("WREADY     = %b", WREADY);
-        $display("AWID_reg   = %h", dut.AWID_reg);
-        $display("AWADDR_reg = %h", dut.AWADDR_reg);
-        $display("addrW      = %h", dut.addrW);
-        $display("beatW      = %h", dut.beatW);
-        $display("stateW     = %b", dut.stateW);
+    //--------------------------------------------------------
+    // Wait before next transaction
+    //--------------------------------------------------------
+    #20;
 
 
-        #20;
-        $finish;
+    //========================================================
+    // TEST 2: MULTIPLE DATA WRITE
+    //========================================================
+    $display("");
+    $display("====================================");
+    $display(" TEST 2: MULTIPLE WRITE");
+    $display("====================================");
 
-    end
+    // Three transfers:
+    // AWLEN = 2 -> 3 beats
+    //
+    // AWSIZE  = 010 -> 4 bytes/beat
+    // AWBURST = 01  -> INCR
+    //
+    // Expected addresses:
+    // Beat 0 -> 0x20
+    // Beat 1 -> 0x24
+    // Beat 2 -> 0x28
+
+    send_aw(
+        8'h02,
+        32'h0000_0020,
+        4'd2, //3 beats
+        3'b010,
+        2'b01
+    );
+
+
+    // Beat 0
+    send_w(
+        8'h02,
+        32'hAAAA_1111,
+        1'b0
+    );
+
+
+    // Beat 1
+    send_w(
+        8'h02,
+        32'hBBBB_2222,
+        1'b0
+    );
+
+
+    // Beat 2 - LAST DATA
+    send_w(
+        8'h02,
+        32'hCCCC_3333,
+        1'b1 //WLAST
+    );
+
+
+    // Only one B response for the whole burst
+    receive_b();
+
+    //========================================================
+    // TEST 3: SINGLE READ
+    //========================================================
+    #20;
+    $display("");
+    $display("====================================");
+    $display(" TEST 3: SINGLE READ");
+    $display("====================================");
+
+    // Earlier:
+    // address 0x10 <- 32'h1111_2222
+
+    send_ar(
+        8'h01,             // ID
+        32'h0000_0010,     // address
+        4'd0,              // ARLEN = 0 -> 1 beat
+        3'b010,            // 4 bytes
+        2'b01              // INCR
+    );
+
+    receive_r(1);
+
+
+    #20;
+
+
+    //========================================================
+    // TEST 4: MULTIPLE READ
+    //========================================================
+    $display("");
+    $display("====================================");
+    $display(" TEST 4: MULTIPLE READ");
+    $display("====================================");
+
+    // Earlier:
+    // 0x20 <- AAAA1111
+    // 0x24 <- BBBB2222
+    // 0x28 <- CCCC3333
+
+    send_ar(
+        8'h02,             // ID
+        32'h0000_0020,     // start address
+        4'd2,              // ARLEN = 2 -> 3 beats
+        3'b010,            // 4 bytes / beat
+        2'b01              // INCR
+    );
+
+    receive_r(3);
+
+
+    //--------------------------------------------------------
+    // Finish
+    //--------------------------------------------------------
+    #20;
+
+    $display("");
+    $display("====================================");
+    $display(" TEST FINISHED");
+    $display("====================================");
+
+    $finish;
+
+end 
 
 endmodule

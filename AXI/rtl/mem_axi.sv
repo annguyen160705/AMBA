@@ -228,14 +228,14 @@ module mem_axi #(
                         Twen    <= 1'b1;
                         beatW   <= beatW + 1;
                         addrW   <= get_next_addr_wr(addrW,AWSIZE_reg,AWBURST_reg,AWLEN_reg);
-                        if(beatW >= AWLEN_reg) begin
+                        if(beatW >= AWLEN_reg) begin //checks whether the current write beat is the last beat of the burst.
                             WREADY  <= 1'b0;
                             BVALID  <= 1'b1;
                             BID     <= AWID_reg;
                             if(WLAST == 1'b0) BRESP <= 2'b10;
                             stateW  <= STW_RSP;
                         end else begin
-                            stateW  <= STW_WRITE;
+                            stateW  <= STW_WRITE; //if not last beat
                         end
                         if (WID != AWID_reg) BRESP  <= 2'b10;
                     end else begin
