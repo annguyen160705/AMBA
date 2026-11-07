@@ -443,7 +443,7 @@ module mem_axi #(
                     stateR  <= STR_READ32;
                 end 
                 end   
-                STR_READ32: begin
+                STR_READ32: begin // Wait for RREADY
                     if(RREADY == 1'b1) begin
                         RLAST   <= 1'b0;
                         RDATA   <= dataR;
@@ -472,11 +472,11 @@ module mem_axi #(
                         stateR  <= STR_END;
                     end else begin
                         Tren    <= 1'b0;
-                        dataR   <= Trdata;
+                        dataR   <= Trdata; // last DATA is already save in dataR
                         stateR  <= STR_READ34;
                     end
                 end    
-                STR_READ34: begin
+                STR_READ34: begin // Wait for RREADY to accept last DATA from dataR
                     if(RREADY == 1'b1) begin
                         RLAST   <= 1'b1;
                         RDATA   <= dataR;
