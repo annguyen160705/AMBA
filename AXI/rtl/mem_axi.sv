@@ -613,7 +613,7 @@ function automatic logic [ADDR_LENGTH-1:0] get_next_addr_rd(
             2'b01: begin
                 if((1<<size)<AXI_WIDTH_DS) begin
                     get_next_addr_rd = addr + (1<<size);
-                end else begin
+                end else begin 
                     naddr = addr[ADDR_LENGTH - 1: AXI_WIDTH_DSB];
                     naddr = naddr + 1;
                     get_next_addr_rd = { naddr,{AXI_WIDTH_DSB{1'b0}}};
